@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import './Weather.css'
 import search_icon from '../assets/search.png'
 import clear_icon from '../assets/clear.png'
@@ -12,6 +12,7 @@ import humidity_icon from '../assets/humidity.png'
 
 const Weather = () => {
     
+    const inputRef = useRef()
     const [weatherData, setWeatherData] = useState(false);
 
     const allIcons = {
@@ -33,14 +34,22 @@ const Weather = () => {
 
     }
     const search = async (cityName)=>{
+        if(cityName == ""){
+            alert("Enter City Name");
+            return;
+        }
         try {
             //for temp in celsius use &units=metric for temp in F &units imperial
             const url = `https://api.openweathermap.org/data/2.5/weather?q=${cityName}
-            &units=imperial&appid=${import.meta.env.VITE_APP_ID}`;
+            &units=metric&appid=${import.meta.env.VITE_APP_ID}`;
             // ${} used to insert things into sections
             const response = await fetch(url);
 
             const data = await response.json();
+            if(!response.ok){
+                alert(data.message);
+                return;
+            }
             console.log(data);
             // we can use setter function to store data into weather data state
             const icon = allIcons[data.weather[0].icon || clear_icon];
@@ -55,20 +64,22 @@ const Weather = () => {
             })
 
         } catch (error) {
-            
+            setWeatherData(false);
+            console.error("Error in fetching weather Data")
         }
     }
   
     useEffect(()=>{
-        search("Tokmok");
+        search("Washington");
     },[])
 
     return (
     <div className='weather'>
         <div className="search-bar">
-            <input type="text" placeholder='Search'/>
-            <img src={search_icon} alt="" />
+            <input ref={inputRef} type="text" placeholder='Search'/>
+            <img src={search_icon} alt="" onClick={()=>search(inputRef.current.value)}/>
         </div>
+        {weatherData?<>
         <img src={clear_icon} alt="" className='weather-icon'/>
         <p className='temperature'>{weatherData.temperature}°C</p>
         <p className='location'>{weatherData.location}</p>
@@ -88,6 +99,9 @@ const Weather = () => {
                 </div>
             </div>
         </div>
+        {/* if the api key is wrong nothing will be displayed */}
+        </>:<></>}
+        
     </div>
   )
 }
